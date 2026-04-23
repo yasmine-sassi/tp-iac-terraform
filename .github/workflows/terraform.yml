@@ -1,17 +1,23 @@
-name: Terraform IaC Pipeline
+name: Terraform Deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   terraform:
-    name: Terraform Deploy
     runs-on: ubuntu-latest
 
+    services:
+      docker:
+        image: docker:dind
+        options: >-
+          --privileged
+          -v /var/run/docker.sock:/var/run/docker.sock
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -20,15 +26,17 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+        working-directory: ./tp-iac-local
 
       - name: Terraform Plan
-        id: plan
         run: terraform plan -no-color
+        working-directory: ./tp-iac-local
         env:
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
 
       - name: Terraform Apply
-        if: steps.plan.outcome == 'success' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve
+        working-directory: ./tp-iac-local
         env:
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
