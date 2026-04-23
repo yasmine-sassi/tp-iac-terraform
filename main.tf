@@ -12,7 +12,7 @@
 }
 
 provider "docker" {
-  host = "npipe:////.//pipe//docker_engine"
+  # Auto-detects Docker socket on Linux (unix://) and Windows (npipe://)
 }
 
 resource "null_resource" "docker_build_app" {
